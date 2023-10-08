@@ -18,7 +18,7 @@ body {
 }
 
 .slide-in-left-enter-active {
-  transform: translateX(0);
+  transform: translateX(0%);
   opacity: 1;
   transition: all 200ms;
 }
