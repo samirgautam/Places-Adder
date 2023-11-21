@@ -5,7 +5,7 @@ import {
   VALIDATOR_MINLENGTH,
   VALIDATOR_REQUIRE,
 } from "../../shared/utils/validators";
-import "./Newplace.css";
+import "./placeForm.css";
 import Button from "../../shared/components/FormElements/Button";
 
 const formReducer = (state, action) => {
@@ -40,6 +40,10 @@ const NewPlace = () => {
         isValid: false
       },
       description: {
+        value: '',
+        isValid: false
+      },
+      address: {
         value: '',
         isValid: false
       }
