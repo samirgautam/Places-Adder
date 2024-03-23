@@ -110,7 +110,9 @@ const updatePlace = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     console.log(errors);
-    throw new HttpError("Invalid inputs passed,please check your data", 422);
+    return next(
+      new HttpError("Invalid inputs passed,please check your data", 422)
+    );
   }
   const { title, description } = req.body;
   const placeId = req.params.pid;
@@ -142,29 +144,42 @@ const updatePlace = async (req, res, next) => {
   res.status(200).json({ place: place.toObject({ getters: true }) });
 };
 
+// const deletePlace = async (req, res, next) => {
+//   const placeId = req.params.pid;
+//   let place;
+//   try {
+//     place = await Place.findById(placeId);
+//   } catch (err) {
+//     const error = new HttpError(
+//       "something went wrong, could not delete place.",
+//       500
+//     );
+//     return next(error);
+//   }
+//   try {
+//     await place.remove();
+//   res.status(200).json({ message: "Deleted Place. " });
+//   } catch (err) {
+//     const error = new HttpError(
+//       "something went wrong , could not delete place.",
+//       500
+//     );
+//     return next(error);
+//   }
+
+// };
 const deletePlace = async (req, res, next) => {
   const placeId = req.params.pid;
-  let place;
   try {
-    place = await Place.findById(placeId);
+    const result = await Place.deleteOne({ _id: placeId });
+    if (result.deletedCount === 0) {
+      throw new HttpError("Place not found.", 404);
+    }
+    res.status(200).json({ message: 'Place deleted successfully' });
   } catch (err) {
-    const error = new HttpError(
-      "something went wrong, could not delete place.",
-      500
-    );
+    const error = err instanceof HttpError ? err : new HttpError("Something went wrong, could not delete place.", 500);
     return next(error);
   }
-  try {
-    await place.remove();
-  } catch (err) {
-    const error = new HttpError(
-      "something went wrong , could not delete place.",
-      500
-    );
-    return next(error);
-  }
-
-  res.status(200).json({ message: "Deleted Place. " });
 };
 
 exports.getPlaceById = getPlaceById;
