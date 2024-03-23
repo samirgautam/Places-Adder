@@ -12,6 +12,18 @@ const app = express();
 
 app.use(bodyParser.json());
 
+app.use((req,res,next)=> {
+  res.setHeader('Access-Control-Allow-Origin' , '*');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'Origin, X-Requested-With, Content-Type, Accept, Authorization'
+  );
+  res.setHeader(
+    'Access-Control-Allow-Methods', 'GET, PATCH, POST, DELETE'
+  );
+  next();
+});
+
 app.use("/api/places", placesRoutes);
 app.use("/api/users", usersRoutes);
 
@@ -30,7 +42,7 @@ app.use((error, req, res, next) => {
 
 
 mongoose
-.connect('mongodb+srv://sam:sam123@cluster0.geehfle.mongodb.net/places?retryWrites=true&w=majority&appName=Cluster0')
+.connect('mongodb+srv://sam:sam123@cluster0.geehfle.mongodb.net/mern?retryWrites=true&w=majority&appName=Cluster0')
 .then(()=>{
   app.listen(5000);
 })
