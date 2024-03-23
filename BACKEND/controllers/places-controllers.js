@@ -169,46 +169,56 @@ const updatePlace = async (req, res, next) => {
   res.status(200).json({ place: place.toObject({ getters: true }) });
 };
 
-// const deletePlace = async (req, res, next) => {
-//   const placeId = req.params.pid;
-//   let place;
-//   try {
-//     place = await Place.findById(placeId);
-//   } catch (err) {
-//     const error = new HttpError(
-//       "something went wrong, could not delete place.",
-//       500
-//     );
-//     return next(error);
-//   }
-//   try {
-//     await place.remove();
-//   res.status(200).json({ message: "Deleted Place. " });
-//   } catch (err) {
-//     const error = new HttpError(
-//       "something went wrong , could not delete place.",
-//       500
-//     );
-//     return next(error);
-//   }
-
-// };
 const deletePlace = async (req, res, next) => {
   const placeId = req.params.pid;
+  let place;
   try {
-    const result = await Place.deleteOne({ _id: placeId });
-    if (result.deletedCount === 0) {
-      throw new HttpError("Place not found.", 404);
-    }
-    res.status(200).json({ message: "Place deleted successfully" });
+    place = await Place.findById(placeId).populate('creator');
   } catch (err) {
-    const error =
-      err instanceof HttpError
-        ? err
-        : new HttpError("Something went wrong, could not delete place.", 500);
+    const error = new HttpError(
+      "something went wrong, could not delete place.",
+      500
+    );
     return next(error);
   }
+  if(!place){
+      const error = new HttpError("Could not find place for this id ", 404);
+      return next(error);
+  }
+  try {
+    const sess = await mongoose.startSession();
+    sess.startTransaction();
+    await place.deleteOne({session : sess});
+    place.creator.places.pull(place);
+    await place.creator.save({session : sess});
+    await sess.commitTransaction();
+  } catch (err) {
+    const error = new HttpError(
+      "something went wrong , could not delete place.",
+      500
+    );
+    return next(error);
+  }
+  res.status(200).json({ message: "Deleted Place. " });
+
+
 };
+// const deletePlace = async (req, res, next) => {
+//   const placeId = req.params.pid;
+//   try {
+//     const result = await Place.deleteOne({ _id: placeId }).populate('creator');
+//     if (result.deletedCount === 0) {
+//       throw new HttpError("Place not found.", 404);
+//     }
+//     res.status(200).json({ message: "Place deleted successfully" });
+//   } catch (err) {
+//     const error =
+//       err instanceof HttpError
+//         ? err
+//         : new HttpError("Something went wrong, could not delete place.", 500);
+//     return next(error);
+//   }
+// };
 
 exports.getPlaceById = getPlaceById;
 exports.getPlacesByUserId = getPlacesByUserId;
