@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useContext } from "react";
 
+import { useHistory } from "react-router-dom";
 import Input from "../../shared/components/FormElements/Input";
 import {
   VALIDATOR_MINLENGTH,
@@ -7,37 +8,60 @@ import {
 } from "../../shared/utils/validators";
 import "./placeForm.css";
 import Button from "../../shared/components/FormElements/Button";
+import ErrorModal from "../../shared/components/UIElements/ErrorModal";
+import LoadingSpinner from "../../shared/components/UIElements/LoadingSpinner";
+
 
 import { useForm } from "../../shared/hooks/form-hook";
-
+import { useHttpClient } from "../../shared/hooks/http-hook";
+import { AuthContext } from "../../shared/context/auth-context";
 
 const NewPlace = () => {
-  const [formState , inputHandler] = useForm(
+  const auth = useContext(AuthContext);
+  const { isLoading, error, sendRequest, clearError } = useHttpClient();
+  const [formState, inputHandler] = useForm(
     {
       title: {
-        value: '',
-        isValid : false
+        value: "",
+        isValid: false,
       },
       description: {
-        value: '',
-        isValid: false
+        value: "",
+        isValid: false,
       },
       address: {
-        value: '',
-        isValid : false
-      }
-    }, false  
+        value: "",
+        isValid: false,
+      },
+    },
+    false
   );
-  
 
-  const placeSubmitHandler = event => {
+  const history = useHistory();
+
+  const placeSubmitHandler = async (event) => {
     event.preventDefault();
-    console.log(formState.inputs);
+    try {
+      await sendRequest(
+        "http://localhost:5000/api/places",
+        "POST",
+        JSON.stringify({
+          title: formState.inputs.title.value,
+          description: formState.inputs.description.value,
+          address: formState.inputs.address.value,
+          creator: auth.userId
+        }),
+        { 'Content-Type' : 'application/json'}
+      );
+        history.push('/');
+    } catch (err) {}
   };
 
   return (
-   
-    <form className="place-form" onSubmit = {placeSubmitHandler}>
+    <React.Fragment>
+      <ErrorModal error = {error} onClear = {clearError} />
+      <form className="place-form" onSubmit={placeSubmitHandler}>
+        {isLoading && <LoadingSpinner asOverlay/> }
       <Input
         id="title"
         element="input"
@@ -54,8 +78,8 @@ const NewPlace = () => {
         validators={[VALIDATOR_MINLENGTH(5)]}
         errorText="Please enter a valid descriptions (at least 5 characters)"
         onInput={inputHandler}
-      />  
-        <Input
+      />
+      <Input
         id="address"
         element="input"
         type="text"
@@ -64,11 +88,13 @@ const NewPlace = () => {
         errorText="Please enter a valid address"
         onInput={inputHandler}
       />
-     
+
       <Button type="submit" disabled={!formState.isValid}>
-        ADD PLACE 
-        </Button> 
+        ADD PLACE
+      </Button>
     </form>
+    </React.Fragment>
+
   );
 };
 
