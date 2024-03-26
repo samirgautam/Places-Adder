@@ -19,7 +19,7 @@ const UserPlaces = (props) => {
           `http://localhost:5000/api/places/user/${userId}`
         );
         setLoadedPlaces(responseData.places);
-      } catch (err) {}
+      } catch (err) {}  
     };
     fetchPlaces();
   }, [sendRequest, userId]);
