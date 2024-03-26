@@ -14,6 +14,7 @@ import { useForm } from '../../shared/hooks/form-hook';
 import { useHttpClient } from '../../shared/hooks/http-hook';
 import { AuthContext } from '../../shared/context/auth-context';
 import './Auth.css';
+import ImageUpload from '../../shared/components/FormElements/ImageUpload';
 
 const Auth = () => {
   const auth = useContext(AuthContext);
@@ -39,7 +40,8 @@ const Auth = () => {
       setFormData(
         {
           ...formState.inputs,
-          name: undefined
+          name: undefined,
+          image : undefined
         },
         formState.inputs.email.isValid && formState.inputs.password.isValid
       );
@@ -50,6 +52,10 @@ const Auth = () => {
           name: {
             value: '',
             isValid: false
+          },
+          image : {
+            value : null,
+            isValid : false
           }
         },
         false
@@ -60,9 +66,9 @@ const Auth = () => {
 
   const authSubmitHandler = async event => {
     event.preventDefault();
-
+    console.log(formState.inputs);
     if (isLoginMode) {
-      try {
+      try { 
        const responseData =  await sendRequest(
           'http://localhost:5000/api/users/login',
           'POST',
@@ -115,6 +121,7 @@ const Auth = () => {
               onInput={inputHandler}
             />
           )}
+          {!isLoginMode && <ImageUpload center id="image" onInput = {inputHandler } />}
           <Input
             element="input"
             id="email"
