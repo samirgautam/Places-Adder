@@ -23,11 +23,12 @@ const PlacesList = (props) => {
           key={place.id}
           id={place.id}
           title={place.title}
-          image={place.imageUrl}
+          image={place.image}
           description={place.description}
           address={place.address}
           coordinates={place.location}
           creatorId={place.creator}
+          onDelete = {props.onDeletePlace}
         />
       ))}
     </ul>
