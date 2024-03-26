@@ -1,5 +1,5 @@
-import React , {useEffect, useState} from "react";
-import { useParams } from "react-router-dom";
+import React, { useEffect, useState, useContext } from "react";
+import { useParams, useHistory } from "react-router-dom";
 
 import Input from "../../shared/components/FormElements/Input";
 import Button from "../../shared/components/FormElements/Button";
@@ -8,128 +8,129 @@ import {
   VALIDATOR_MINLENGTH,
 } from "../../shared/utils/validators";
 import { useForm } from "../../shared/hooks/form-hook";
-import './placeForm.css';
+import "./placeForm.css";
 import Card from "../../shared/components/UIElements/Card";
 
-const Dummy_Places = [
-  {
-    id: "p1",
-    title: "Dharahara Tower",
-    description:
-      "Dharahara in Kathmandu was the tallest building in Nepal and the second such tower built by Bhimsen Thapa. ",
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/DHARAHARA_TOWER.jpg/800px-DHARAHARA_TOWER.jpg",
-    address: "P826+3VR, Sundhara Rd, Kathmandu 44600",
-    location: {
-      lat: 27.7004751,
-      lng: 85.3123657,
-    },
-    creator: "u1",
-  },
-  {
-    id: "p2",
-    title: "Dharahara Tower",
-    description:
-      "Dharahara in Kathmandu was the tallest building in Nepal and the second such tower built by Bhimsen Thapa. ",
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/DHARAHARA_TOWER.jpg/800px-DHARAHARA_TOWER.jpg",
-    address: "P826+3VR, Sundhara Rd, Kathmandu 44600",
-    location: {
-      lat: 27.7004751,
-      lng: 85.3123657,
-    },
-    creator: "u2",
-  },
-];
+import { useHttpClient } from "../../shared/hooks/http-hook";
+import { AuthContext } from "../../shared/context/auth-context";
+import LoadingSpinner from "../../shared/components/UIElements/LoadingSpinner";
+import ErrorModal from "../../shared/components/UIElements/ErrorModal";
 
 const UpdatePlace = () => {
-  const [isLoading, setIsLoading] = useState(true);
+  const auth = useContext(AuthContext);
+  const { isLoading, error, sendRequest, clearError } = useHttpClient();
+  const [loadedPlace, setLoadedPlace] = useState();
   const placeId = useParams().placeId;
+  const history = useHistory();
 
-
-
-  const [formState , inputHandler , setFormData ] = useForm({
-    title: {
-      value: '',
-      isValid: false
+  const [formState, inputHandler, setFormData] = useForm(
+    {
+      title: {
+        value: "",
+        isValid: false,
+      },
+      description: {
+        value: "",
+        isValid: false,
+      },
     },
-    description: {
-      value: '',
-      isValid: false
-    }
-  } , false)
+    false
+  );
 
-  const identifiedPlace = Dummy_Places.find((p) => p.id === placeId);
+  useEffect(() => {
+    const fetchPlace = async () => {
+      try {
+        const responseData = await sendRequest(
+          `http://localhost:5000/api/places/${placeId}`
+        );
+        setLoadedPlace(responseData.place);
+        setFormData(
+          {
+            title: {
+              value: responseData.place.title,
+              isValid: true,
+            },
+            description: {
+              value: responseData.place.description,
+              isValid: true,
+            },
+          },
+          true
+        );
+      } catch (err) {}
+    };
+    fetchPlace();
+  }, [sendRequest, placeId, setFormData]);
 
-  useEffect( () => {
-    if(identifiedPlace){
-      setFormData({
-        title: {
-          value: identifiedPlace.title,
-          isValid: true
-        },
-        description: {
-          value: identifiedPlace.description,
-          isValid: true
-        }
-      } , true);
-    }
-    setIsLoading(false);
-  
-  } , [setFormData, identifiedPlace]);
-
- 
-  const placeUpdateSubmitHandler = event => {
+  const placeUpdateSubmitHandler = async  (event) => {
     event.preventDefault();
-    console.log(formState.inputs);
+    try {
+      await sendRequest(`http://localhost:5000/api/places/${placeId}`,
+      'PATCH',
+      JSON.stringify({
+        title : formState.inputs.title.value,
+        description: formState.inputs.description.value
+      }),
+      {
+        'Content-Type' : 'application/json'
+      }
+      );
+      history.push('/' + auth.userId + '/places' );
+    } catch(err) {}
+  };
+
+  
+  if (isLoading) {
+    return (
+      <div className="center">
+        <LoadingSpinner />
+      </div>
+    );
   }
 
-  if (!identifiedPlace) {
+
+  if (!loadedPlace && !error) {
     return (
       <div className="center">
         <Card>
-        <h2>Could not find place! </h2>
+          <h2>Could not find place! </h2>
         </Card>
       </div>
     );
   }
 
-  if(isLoading) {
-    return (
-      <div className="center">
-        <h2>Loading...</h2>
-      </div>
-    );
-  }
-
   return (
-    <form className="place-form" onSubmit={placeUpdateSubmitHandler}>
+    <React.Fragment>
+      <ErrorModal error = {error} onClear = {clearError} />
+      
+   {!isLoading &&loadedPlace && <form className="place-form" onSubmit={placeUpdateSubmitHandler}>
       <Input
         id="title"
         element="element"
         type="text"
         label="Title"
         validators={[VALIDATOR_REQUIRE()]}
-        errorText = "Please enter a valid title."
-        onInput = {inputHandler}
-        initialValue = {formState.inputs.title.value}
-        initialValid = {formState.inputs.title.isValid}
+        errorText="Please enter a valid title."
+        onInput={inputHandler}
+        initialValue={loadedPlace.title}
+        initialValid={true}
       />
-        <Input
+      <Input
         id="description"
         element="textarea"
         label="Description"
         validators={[VALIDATOR_MINLENGTH(5)]}
-        errorText = "Please enter a valid description (min 5 characters) ."
-        onInput = {inputHandler}
-        initialValue = {formState.inputs.description.value}
-        initialValid ={formState.inputs.description.isValid}
+        errorText="Please enter a valid description (min 5 characters) ."
+        onInput={inputHandler}
+        initialValue={loadedPlace.description}
+        initialValid={true}
       />
-      <Button type= "submit" disabled = {!formState.isValid
-      }>
+      <Button type="submit" disabled={!formState.isValid}>
         Update Place
       </Button>
-    </form>
+    </form>}
+    </React.Fragment>
+
   );
 };
 
