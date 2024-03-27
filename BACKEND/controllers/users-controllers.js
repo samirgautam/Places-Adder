@@ -47,8 +47,7 @@ const signup = async (req, res, next) => {
   const createdUser = new User({
     name,
     email,
-    image:
-      "https://lh5.googleusercontent.com/p/AF1QipPgW0AOExVH8BdTdrQwT5cQXiLOAP1BiRlbCTfN=w408-h540-k-no",
+    image:req.file.path,
     password,
     places : []
   });
