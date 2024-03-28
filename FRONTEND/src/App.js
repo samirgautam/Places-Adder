@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React from "react";
 import {
   BrowserRouter as Router,
   Route,
@@ -12,32 +12,10 @@ import UserPlaces from "./places/pages/UserPlaces";
 import UpdatePlace from "./places/pages/UpdatePlace";
 import Auth from "./user/pages/Auth";
 import { AuthContext } from "./shared/context/auth-context";
+import { useAuth } from "./shared/hooks/auth-hook";
 
 const App = () => {
-  const [token, setToken] = useState(false);
-  const [userId, setUserId] = useState(false);
-
-  const login = useCallback((uid, token, expirationDate) => {
-    setToken(token);
-    setUserId(uid);
-    const tokenExpirationDate = new Date(new Date().getTime() + 1000 * 60 * 60);
-    localStorage.setItem(
-      "userData",
-      JSON.stringify({ userId: uid, token: token, expiration : expirationDate || tokenExpirationDate.toISOString() })
-    );
-  }, []);
-  const logout = useCallback(() => {
-    setToken(null);
-    setUserId(null);
-    localStorage.removeItem("userData");
-  }, []);
-
-  useEffect(() => {
-    const storedData = JSON.parse(localStorage.getItem("userData"));
-    if (storedData && storedData.token && new Date(storedData.expiration > new Date())) {
-      login(storedData.userId, storedData.token, new Date(storedData.expiration));
-    }
-  }, [login]);
+  const {token, login, logout, userId} = useAuth();
 
   let routes;
 
